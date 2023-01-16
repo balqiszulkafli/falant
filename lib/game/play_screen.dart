@@ -6,23 +6,24 @@ import 'package:falant/repository/boxes/boxes.dart';
 import 'package:falant/repository/results.dart';
 import 'package:flutter/material.dart';
 
-class PlayScreen extends StatefulWidget {
-  const PlayScreen({super.key, required this.level});
+class D15 extends StatefulWidget {
+  const D15({super.key, required this.level});
   //member
   final Level level;
   //constructor
 
   @override
-  State<PlayScreen> createState() => _PlayScreenState();
+  State<D15> createState() => _D15State();
 }
 
-class _PlayScreenState extends State<PlayScreen> {
+class _D15State extends State<D15> {
   //members
   late List<Box> boxes = [];
   late List<Box> opaqueBoxes = []; //to be filled
   late List<Box> choiceBoxes = []; //user will select from this list
-  List<String> userInput = [];
+  var userInput = [];
   String result = "";
+  int mismatches = 0;
 
   //disposal
   @override
@@ -45,7 +46,7 @@ class _PlayScreenState extends State<PlayScreen> {
 
 //choice
     choiceBoxes.addAll(boxes);
-    choiceBoxes.shuffle();
+    //choiceBoxes.shuffle();
   }
 
   @override
@@ -97,6 +98,11 @@ class _PlayScreenState extends State<PlayScreen> {
                 children: List.generate(
                     choiceBoxes.length, (index) => _generateChoiceBox(index)),
               ),
+            ),
+
+            ElevatedButton(
+              child: Text("Reset"),
+              onPressed: _reset,
             )
           ],
         ));
@@ -120,25 +126,26 @@ class _PlayScreenState extends State<PlayScreen> {
         //once box is accepted call back
 
         setState(() {
-          opaqueBoxes[index].color = data.color;
-          //opaqueBoxes[index].name = data.name;
-          userInput.insert(index, data.name);
-
-          opaqueBoxes.elementAt(index).filled =
-              true; //opaqueboxes to be filled is already filled
-          //accept box
-          acceptBox(opaqueBoxes.elementAt(index));
+          var box = Box(
+            color: data.color,
+            name: data.name,
+            filled: true,
+          );
+          opaqueBoxes[index] = box; //opaqueboxes to be filled is already filled
+          userInput.add(data.name);
+          choiceBoxes.removeWhere((element) => element.name == data.name);
         });
-        calculateResult();
 
         if (isLevelEnd()) {
-          //game level ended
+          _evaluate();
           print(userInput);
           Navigator.push(
               context,
               MaterialPageRoute(
                 builder: (context) => ResultScreen(
                   result: result,
+                  mismatches: mismatches,
+                  total: userInput.length,
                 ),
               ));
         }
@@ -170,39 +177,6 @@ class _PlayScreenState extends State<PlayScreen> {
         style: const TextStyle(fontSize: 16),
       ),
     );
-  }
-
-  void calculateResult() {
-    //scoring here
-    bool isSameNormal = normalList.every((item) => userInput.contains(item));
-    bool isSameProtan = protanList.every((item) => userInput.contains(item));
-    bool isSameDeutan = protanList.every((item) => userInput.contains(item));
-    bool isSameTritan = protanList.every((item) => userInput.contains(item));
-
-    if (isSameNormal == true) {
-      result = "Normal";
-    } else if (isSameProtan == true) {
-      result = "Protan";
-    } else if (isSameDeutan == true) {
-      result = "Deutan";
-    } else if (isSameTritan == true) {
-      result = "Tritan";
-    } else {
-      result = "Result cannot be detected, please retake";
-    }
-  }
-
-  void acceptBox(Box box) {
-    //find the box from choiceBoxed and remove it
-    for (int i = 0; i < choiceBoxes.length; i++) {
-      //compare using names
-      Box b = choiceBoxes.elementAt(i);
-      if (b.name == box.name) {
-        setState(() {
-          choiceBoxes.removeAt(i);
-        });
-      }
-    }
   }
 
   bool isLevelEnd() {
@@ -237,5 +211,64 @@ class _PlayScreenState extends State<PlayScreen> {
         ),
       ),
     );
+  }
+
+  void _evaluate() {
+    mismatches = 0;
+    if (userInput.length != 15) {
+      return;
+    }
+
+    for (int i = 0; i < userInput.length; i++) {
+      if (userInput[i] != normalList[i]) {
+        mismatches++;
+      }
+    }
+    if (mismatches == 0) {
+      if (userInput.toString().toLowerCase() ==
+          normalList.toString().toLowerCase()) {
+        result = "Normal";
+      }
+    } else if (mismatches <= 2) {
+      result = "Normal";
+    } else {
+      if (userInput.toString().toLowerCase() !=
+          normalList.toString().toLowerCase()) {
+        if (userInput.toString().toLowerCase() ==
+            protanList.toString().toLowerCase()) {
+          result = "Protan";
+          print("Protan");
+        } else if (userInput.toString().toLowerCase() ==
+            deutanList.toString().toLowerCase()) {
+          result = "Deutan";
+          print("Deutan");
+        } else if (userInput.toString().toLowerCase() ==
+            tritanList.toString().toLowerCase()) {
+          result = "Tritan";
+          print("Tritan");
+        } else {
+          result = "Color Defient";
+          print("Color Defient");
+        }
+      }
+    }
+    print(mismatches);
+  }
+
+  void _reset() {
+    setState(() {
+      opaqueBoxes = Boxes().getBoxes(Boxes().numberOfBoxes(1));
+      choiceBoxes = Boxes().getBoxes(Boxes().numberOfBoxes(1));
+      // reset the state of the boxes here
+      for (int i = 0; i < opaqueBoxes.length; i++) {
+        opaqueBoxes[i] = Box(
+            color: opaqueBoxes[i].color,
+            name: opaqueBoxes[i].name,
+            filled: false);
+      }
+      // clear the userInput list
+      userInput.clear();
+      mismatches = 0;
+    });
   }
 }

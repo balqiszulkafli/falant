@@ -1,4 +1,3 @@
-
 import 'package:falant/game/play_screen.dart';
 import 'package:falant/model/level.dart';
 import 'package:flutter/material.dart';
@@ -73,8 +72,8 @@ class _LaunchScreenState extends State<LaunchScreen> {
     Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => PlayScreen(
-              level: Level(id: 1, name: "One", duration: 30, points: 25)),
+          builder: (context) =>
+              D15(level: Level(id: 1, name: "One", duration: 30, points: 25)),
         ));
   }
 }
